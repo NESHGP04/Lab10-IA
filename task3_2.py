@@ -57,6 +57,33 @@ def metricas(errores_totales):
         "porcentaje_error_alto": np.mean(np.array(errores_totales) > 5) * 100
     }
 
+def peores_escenarios(K, num_sim=50, pasos=30):
+    resultados = []
+
+    for i in range(num_sim):
+        real, obs = simular_vehiculo(pasos)
+        est, _ = filtrado_particulas_param(obs, K)
+
+        error = np.mean(np.abs(np.array(real) - np.array(est)))
+
+        resultados.append((error, real, obs, est))
+
+    resultados.sort(key=lambda x: x[0], reverse=True)
+
+    return resultados[:5]
+
+def tabla_resultados(err_K5, err_K20):
+
+    m5 = metricas(err_K5)
+    m20 = metricas(err_K20)
+
+    print("\nComparación de desempeño:\n")
+    print(f"{'Métrica':<30}{'K=5':<15}{'K=20':<15}")
+    print("-"*60)
+    print(f"{'Error promedio':<30}{m5['error_promedio']:<15.3f}{m20['error_promedio']:<15.3f}")
+    print(f"{'Error máximo':<30}{m5['error_max']:<15.3f}{m20['error_max']:<15.3f}")
+    print(f"{'% error > 5 carriles':<30}{m5['porcentaje_error_alto']:<15.2f}{m20['porcentaje_error_alto']:<15.2f}")
+
 if __name__ == "__main__":
 
     np.random.seed(42)
@@ -77,3 +104,11 @@ if __name__ == "__main__":
     # Métricas
     print("K=5:", metricas(errores_totales_K5))
     print("K=20:", metricas(errores_totales_K20))
+
+    #peores escenarios, donde k=5 falla más
+    peores = peores_escenarios(5)
+
+    for i, (error, _, _, _) in enumerate(peores):
+        print(f"Escenario {i+1}: error = {error}")
+
+    tabla_resultados(errores_totales_K5, errores_totales_K20)
